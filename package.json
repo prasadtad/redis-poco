@@ -1,0 +1,29 @@
+{
+  "name": "redis-poco",
+  "version": "1.0.0",
+  "description": "Stores objects in redis with filtering on attributes",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "keywords": [
+    "redis",
+    "poco",
+    "filter"
+  ],
+  "homepage": "https://github.com/recipeshelf/redis-poco",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/recipeshelf/redis-poco.git"
+  },
+  "bugs": {
+    "url": "https://github.com/recipeshelf/redis-poco/issues"
+  },
+  "author": "Sri Prasad Tadimalla",
+  "license": "MIT",
+  "dependencies": {
+    "lodash": "4.17.4",
+    "redis": "2.8.0",
+    "redis-promisify": "0.1.0",
+    "util.promisify": "1.0.0"
+  }
+}
