@@ -68,7 +68,7 @@ redisPoco.whenFlush()
             console.error(err)
             redisPoco.whenQuit()
                 .then(() => {
-                    console.info('Tests - passed')
+                    console.info('Tests - failed')
                     process.exit()
                 })            
         })
