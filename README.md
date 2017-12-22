@@ -15,12 +15,14 @@ npm install redis-poco
 const RedisPoco = require('redis-poco')
 
 const redisPoco = new RedisPoco({ 
+    namespace: 'PocoTest', 
     port: 6379, 
-    host: 'localhost', 
+    host: 'localhost',
+    endpoint: 'redis://localhost:6379', 
+    client: redis.createClient...,
     idAttribute: 'id',
     itemKey: 'Item',
     operatingSetsExpireSeconds: 60,
-    namespace: 'PocoTest', 
     attributes: ['A', 'B', 'C', 'D', 'E']
 })
 
@@ -37,13 +39,14 @@ redisPhraseComplete.whenStore({id: 'id1', A: 26, B: ['x', 'y'], C: 'z', D: 26, E
 
 If options aren't passed, it uses defaults.
 
+- namespace: The namespace used for the poco keys. The default is 'Poco'.
 - port: Port address for the redis instance. The default is 6379.
 - host: The hostname for the redis instance. The default is localhost.
-- namespace: The namespace used for the poco keys. The default is 'Poco'.
+- endpoint: Add the full endpoint for redis, an alternative to setting port and hostname. 
+- client: Use to pass in your own client.
 - idAttribute: The id attribute of the object being stored. The default is 'id'.
 - itemKey: The key under which the actual object json is store. The default is 'Item'.
 - operatingSetsExpireSeconds: Temporary sets when filtering are expired after this interval. The default is 60.
-- client: Use to pass in your own client.
 - attributes: The attributes on which you are filtering. There are certain restrictions like they can only hold simple string, number or boolean or an array of strings.
 
 ### whenStore(poco)

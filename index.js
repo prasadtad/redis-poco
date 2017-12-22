@@ -13,7 +13,7 @@ module.exports = class RedisPoco {
         this.attributes = options.attributes
         this.namespace = options.namespace || 'Poco'       
         this.operatingSetsExpireSeconds = options.operatingSetsExpireSeconds || 60
-        this.client = options.client || redis.createClient(options.port || 6379, options.host || 'localhost')
+        this.client = options.client || (options.endpoint ? redis.createClient(options.endpoint) : redis.createClient(options.port || 6379, options.host || 'localhost'))
         _.bindAll(this, 'buildKey', 'whenFlush', 'whenGetAttributeValues', 'whenGet', 'whenFilter', 'whenSetOr', 'whenSetsAnd', 'whenRemove', 'whenStore', 'whenQuit')        
     }
 
