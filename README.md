@@ -27,6 +27,7 @@ const redisPoco = new RedisPoco({
 redisPhraseComplete.whenStore({id: 'id1', A: 26, B: ['x', 'y'], C: 'z', D: 26, E: true, F: 'z'})
             .then(() => redisPhraseComplete.whenStore({id: 'id2', A: 26, B: ['z', 'y'], C: 'z', D: 32, E: false, F: 'y'}))
             .then(() => redisPhraseComplete.whenFilter({A: {min: 26, max: 26}, B: ['x', 'y'], C: 'z', D: {max: 30}, E: true}))
+            .then(() => redisPoco.whenRemove('id2'))
             .then(console.log)
             .then(redisPhraseComplete.whenQuit)                   
 ```
@@ -48,6 +49,10 @@ If options aren't passed, it uses defaults.
 ### whenStore(poco)
 
 Adds the poco object and indexes it.
+
+### whenRemove(id)
+
+Removes the poco object and it's indexes.
 
 ### whenGet(id)
 
