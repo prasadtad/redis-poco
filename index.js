@@ -14,7 +14,7 @@ module.exports = class RedisPoco {
         this.namespace = options.namespace || 'Poco'       
         this.operatingSetsExpireSeconds = options.operatingSetsExpireSeconds || 60
         this.client = options.client || redis.createClient(options.port || 6379, options.host || 'localhost')
-        _.bindAll(this, 'buildKey', 'whenFlush', 'whenGetAttributeValues', 'whenGet', 'whenFilter', 'whenSetOr', 'whenSetsAnd', 'whenStore', 'whenQuit')        
+        _.bindAll(this, 'buildKey', 'whenFlush', 'whenGetAttributeValues', 'whenGet', 'whenFilter', 'whenSetOr', 'whenSetsAnd', 'whenRemove', 'whenStore', 'whenQuit')        
     }
 
     buildKey(...suffix) {
@@ -37,7 +37,7 @@ module.exports = class RedisPoco {
     whenFilter(filter) {
         if (!_.isObjectLike(filter) || _.isArray(filter)) return Promise.reject(new Error('Invalid filter'))
 
-        const validAttributes = _.reject(this.attributes, _.isNil)
+        const validAttributes = _.reject(this.attributes, attribute => _.isNil(filter[attribute]))
         const numericAttributes = _.filter(validAttributes, attribute => _.isObject(filter[attribute]) && !_.isArray(filter[attribute]))
 
         const whenRangeByScores = _.map(numericAttributes, attribute => this.client.zrangebyscoreAsync(this.buildKey(attribute), filter[attribute].min ? filter[attribute].min : '-inf', filter[attribute].max ? filter[attribute].max : '+inf', 'WITHSCORES'))
@@ -56,16 +56,16 @@ module.exports = class RedisPoco {
                         keyPromises.push(this.whenSetOr(this.buildKey(numericAttributes[i]), scores))
                 }
                 return Promise.all(keyPromises)
-                        .then(k => {
-                            keys.push(_.difference(validAttributes, numericAttributes)
-                                            .map(attribute => _.map(this.toArray(filter[attribute]), 
-                                                                v => this.buildKey(attribute, v))))
-                            keys = _.flattenDeep(keys)
-                            return this.whenSetsAnd(_.union(k, keys))
-                                        .then(set => 
-                                            this.client.smembersAsync(set)
-                                        )
-                        })
+                    .then(k => {
+                        keys.push(_.difference(validAttributes, numericAttributes)
+                                        .map(attribute => _.map(this.toArray(filter[attribute]), 
+                                                            v => this.buildKey(attribute, v))))
+                        keys = _.flattenDeep(keys)
+                        return this.whenSetsAnd(_.union(k, keys))
+                                    .then(set => 
+                                        this.client.smembersAsync(set)
+                                    )
+                    })
             })
     }
 
@@ -73,15 +73,19 @@ module.exports = class RedisPoco {
         const setKeys = _.map(setNames, setName => this.buildKey(setPrefix, setName))
         const destination = setKeys.join('|')
         return this.client.sunionstoreAsync(destination, setKeys)
-                    .then(() => this.client.expireAsync(destination, this.operatingSetsExpireSeconds))
-                    .then(() => destination)
+            .then(() => this.client.expireAsync(destination, this.operatingSetsExpireSeconds))
+            .then(() => destination)
     }
 
     whenSetsAnd(setKeys) {
         const destination = setKeys.join('&')
         return this.client.sinterstoreAsync(destination, setKeys)
-                    .then(() => this.client.expireAsync(destination, this.operatingSetsExpireSeconds))
-                    .then(() => destination)
+            .then(() => this.client.expireAsync(destination, this.operatingSetsExpireSeconds))
+            .then(() => destination)
+    }
+
+    whenRemove(id) {
+        return this.whenStore({id: id}).then(() => this.client.hdelAsync(this.buildKey(this.itemKey), id))
     }
 
     whenStore(poco) {
@@ -101,16 +105,16 @@ module.exports = class RedisPoco {
                 transaction.hset(this.buildKey(this.itemKey), poco[this.idAttribute], JSON.stringify(poco))
                 for (const attribute of this.attributes)
                 {
-                    if (_.isNil(poco[attribute])) {
-                        if (!_.isNil(oldPoco) && !_.isNil(oldPoco[attribute]))
-                            _.forEach(this.toArray(oldPoco[attribute]), value => {
-                                if (!_.isNil(value)) {
-                                    transaction.srem(this.buildKey(attribute, value), id)
-                                    if (_.isNumber(value))
-                                        transaction.zrem(this.buildKey(attribute), value, id)                                    
-                                }
-                            })
-                    } else
+                    if (!_.isNil(oldPoco) && !_.isNil(oldPoco[attribute])) {
+                        _.forEach(this.toArray(oldPoco[attribute]), value => {
+                            if (!_.isNil(value)) {
+                                transaction.srem(this.buildKey(attribute, value), id)
+                                transaction.zrem(this.buildKey(attribute), value, id)                                    
+                            }
+                        })
+                    }
+
+                    if (!_.isNil(poco[attribute])) {                        
                         _.forEach(this.toArray(poco[attribute]), value => {
                             if (!_.isNil(value)) {
                                 transaction.sadd(this.buildKey(attribute, value), id)
@@ -118,6 +122,7 @@ module.exports = class RedisPoco {
                                     transaction.zadd(this.buildKey(attribute), value, id)                                   
                             }
                         })              
+                    }
                 }
                 return transaction.execAsync() 
             })        

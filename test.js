@@ -36,10 +36,27 @@ redisPoco.whenFlush()
         .then(poco => {
             assert.deepEqual(poco, {id: 'id2', A: 26, B: ['z', 'y'], C: 'z', D: 32, E: false, F: 'y'})
             return Promise.resolve()
-        })
+        })        
         .then(() => redisPoco.whenFilter({A: {min: 26, max: 26}, B: ['x', 'y'], C: 'z', D: {max: 30}, E: true}))
         .then(ids => {
             assert.deepEqual(ids, ['id1'])
+            return Promise.resolve()
+        })
+        .then(() => redisPoco.whenStore({id: 'id2', A: ['x'], B: 75, C: 34, E: true, F: 'x'}))
+        .then(() => redisPoco.whenGet('id2'))
+        .then(poco => {
+            assert.deepEqual(poco, {id: 'id2', A: ['x'], B: 75, C: 34, E: true, F: 'x'})
+            return Promise.resolve()
+        })
+        .then(() => redisPoco.whenRemove('id1'))
+        .then(() => redisPoco.whenGet('id1'))
+        .then(poco => {
+            assert.equal(poco, null)
+            return Promise.resolve()
+        })
+        .then(() => redisPoco.whenFilter({A: 'x', B: {min: 60}, C: 34, E: true}))
+        .then(ids => {
+            assert.deepEqual(ids, ['id2'])
             return Promise.resolve()
         })
         .then(redisPoco.whenQuit)
