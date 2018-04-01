@@ -30,6 +30,7 @@ redisPhraseComplete.whenStore({id: 'id1', A: 26, B: ['x', 'y'], C: 'z', D: 26, E
             .then(() => redisPhraseComplete.whenStore({id: 'id2', A: 26, B: ['z', 'y'], C: 'z', D: 32, E: false, F: 'y'}))
             .then(() => redisPhraseComplete.whenFilter({A: {min: 26, max: 26}, B: ['x', 'y'], C: 'z', D: {max: 30}, E: true}))
             .then(() => redisPoco.whenRemove('id2'))
+            .then(() => redisPoco.whenRemoveAll())
             .then(console.log)
             .then(redisPhraseComplete.whenQuit)                   
 ```
@@ -48,6 +49,10 @@ If options aren't passed, it uses defaults.
 - itemKey: The key under which the actual object json is store. The default is 'Item'.
 - operatingSetsExpireSeconds: Temporary sets when filtering are expired after this interval. The default is 60.
 - attributes: The attributes on which you are filtering. There are certain restrictions like they can only hold simple string, number or boolean or an array of strings.
+
+### whenRemoveAll()
+
+Removes all objects under the namespace
 
 ### whenStore(poco)
 
