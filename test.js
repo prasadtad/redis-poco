@@ -59,6 +59,12 @@ redisPoco.whenFlush()
             assert.deepEqual(ids, ['id2'])
             return Promise.resolve()
         })
+        .then(() => redisPoco.whenRemoveAll())
+        .then(() => redisPoco.whenGet('id2'))
+        .then(poco => {
+            assert.equal(poco, null)
+            return Promise.resolve()
+        })
         .then(redisPoco.whenQuit)
         .then(() => {
             console.info('Tests - passed')

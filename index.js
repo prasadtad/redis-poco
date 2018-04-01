@@ -14,7 +14,7 @@ module.exports = class RedisPoco {
         this.namespace = options.namespace || 'Poco'       
         this.operatingSetsExpireSeconds = options.operatingSetsExpireSeconds || 60
         this.client = options.client || (options.endpoint ? redis.createClient(options.endpoint) : redis.createClient(options.port || 6379, options.host || 'localhost'))
-        _.bindAll(this, 'buildKey', 'whenFlush', 'whenGetAttributeValues', 'whenGet', 'whenFilter', 'whenSetOr', 'whenSetsAnd', 'whenRemove', 'whenStore', 'whenQuit')        
+        _.bindAll(this, 'buildKey', 'whenFlush', 'whenRemoveAll', 'whenScan', 'whenGetAttributeValues', 'whenGet', 'whenFilter', 'whenSetOr', 'whenSetsAnd', 'whenRemove', 'whenStore', 'whenQuit')        
     }
 
     buildKey(...suffix) {
@@ -22,6 +22,27 @@ module.exports = class RedisPoco {
     }
 
     whenFlush() { return this.client.flushdbAsync() }
+
+    whenRemoveAll() {
+        return this.whenScan('0', [], this.namespace + ':*')
+                    .then(keys => keys && keys.length > 0 ? this.client.delAsync(...keys) : Promise.resolve())                    
+    }
+
+    whenScan(cursor, results, pattern) { 
+        const args = [cursor]
+        if (pattern) {
+            args.push('MATCH')
+            args.push(pattern)
+        }
+        args.push('COUNT')
+        args.push(100)
+        return this.client.scanAsync(...args)
+                .then(r => {
+                    results.push(...r[1])
+                    if (r[0] === '0') return Promise.resolve(results)                        
+                    return this.whenScan(r[0], results, pattern)
+                })
+    }
 
     whenGetAttributeValues(attribute) {
         attribute = this.buildKey(attribute) + ':'

@@ -1,6 +1,6 @@
 {
   "name": "redis-poco",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Stores objects in redis with filtering on attributes",
   "scripts": {
     "test": "node test.js"
