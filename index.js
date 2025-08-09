@@ -38,6 +38,8 @@ export default class RedisPoco {
         if (keys && keys.length > 0) {
             await this.client.del(...keys)
         }
+        
+        await this.client.del(this.buildKey(this.itemKey));
     }
 
     async whenScan(cursor, results, pattern) {
